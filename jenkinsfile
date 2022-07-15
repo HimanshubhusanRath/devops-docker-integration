@@ -1,0 +1,46 @@
+pipeline
+{
+    agent any
+    tools
+    {
+        maven 'Maven-Local'
+        jdk 'JDK17-LOCAL'
+    }
+    stages
+    {
+        stage('Build Maven Project')
+        {
+            steps
+            {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/HimanshubhusanRath/devops-docker-integration.git']]])
+                sh 'mvn clean install'
+             }
+        }
+        
+        stage('Build Docker Image')
+        {
+            steps
+            {
+                script
+                {
+                    sh 'docker build -t himanshubhusan88/devops-docker-integration:developermode .'
+                 }
+            }
+        }
+        stage('Push Docker Image to Docker-Hub')
+        {
+            steps
+            {
+                script
+                {
+                    withCredentials([usernamePassword(credentialsId: 'DOCKER', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')])
+                    {
+                       sh 'echo ${dockerusername} --- ${dockerpassword}'
+                       sh 'docker login -u ${dockerusername} -p ${dockerpassword}'
+                       sh 'docker push himanshubhusan88/devops-docker-integration:developermode'
+                    }
+                }
+            }
+        }
+    }
+}
